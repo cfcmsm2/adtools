@@ -28,7 +28,7 @@
 
 <script>
 import Vue from "vue";
-import { get } from "../areaBookApi";
+import { abAPIGet } from "../areaBookApi";
 
 export default {
   data() {
@@ -87,7 +87,7 @@ export default {
     },
   },
   async created() {
-    this.mission = (await get("/mission/24723")).mission;
+    this.mission = (await abAPIGet("/mission/24723")).mission;
   },
 };
 </script>
