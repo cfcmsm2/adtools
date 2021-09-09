@@ -13,21 +13,19 @@ let DROPPED;
 
 const NUM_PRINCIPLES = 44;
 
-let commitments = null;
-let principles = null;
-function loadPrinciplesAndCommitments() {
-  abAPIGet("/progress/principles").then(
-    (data) =>
-      (principles = data
-        .map((item) => item.principles)
-        .flat()
-        .map((principle) => principle.id))
+async function loadPrinciplesAndCommitments() {
+  let principles = await abAPIGet("/progress/principles").then((principles) =>
+    principles
+      .map((item) => item.principles)
+      .flat()
+      .map((principle) => principle.id)
   );
-  abAPIGet("/progress/commitments").then(
-    (data) => (commitments = data.map((x) => x.id))
-  );
+  let commitments = await abAPIGet(
+    "/progress/commitments"
+  ).then((commitments) => commitments.map((commitment) => commitment.id));
+
+  return { principles, commitments };
 }
-loadPrinciplesAndCommitments();
 
 async function isNewPerson(timeline, personId) {
   const teachingEventIds = timeline
@@ -42,6 +40,7 @@ async function isNewPerson(timeline, personId) {
 
   let principle = false;
   let commitment = false;
+  const { principles, commitments } = await loadPrinciplesAndCommitments();
 
   const npEvent = teachingEvents.find((teachingEvent) => {
     const eventPerson = teachingEvent.personEvents.find(

@@ -2,7 +2,7 @@
   <div>
     <h2>Page Local Engagement Data</h2>
     <pre>
-      {{ JSON.stringify(window.FB, null, 2) }}
+      {{ JSON.stringify(FB, null, 2) }}
     </pre>
     <div v-if="!loggedIn">
       <button class="pure-button" @click="logIn">Log in</button>
@@ -91,6 +91,7 @@ function getLocalEngagement(token) {
 export default {
   data() {
     return {
+      FB,
       localReach: {},
       localLikes: {},
       localEngagement: {},
