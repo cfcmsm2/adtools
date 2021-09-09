@@ -1,4 +1,7 @@
 import { abAPIGet, personInfo, lessonInfo, getProgress } from "./areaBookApi";
+import * as Papa from "papaparse";
+
+let NAME;
 let ABP_LINK;
 let FIRST_LESSON;
 let PERCENT_PRINCIPLES_TAUGHT;
@@ -81,6 +84,8 @@ async function getInfo(oldPerson) {
 
   const { person } = await personInfo(personId);
 
+  oldPerson[NAME] = `${person.firstName || ""} ${person.lastName || ""}`;
+
   if (person.principleSummary) {
     // if they've been taught principles
     oldPerson[PERCENT_PRINCIPLES_TAUGHT] = Math.floor(
@@ -139,10 +144,15 @@ async function getInfo(oldPerson) {
  * @returns {Promise<getInfoResult>} updatedPeople - Copy/pasteable updated people data
  */
 export function getPeopleProgress(allPeople) {
-  const parsedPeople = allPeople.split("\n").map((row) => row.split("\t"));
+  const papaConfig = {
+    header: false,
+    delimiter: "\t"
+  };
+  const parsedPeople = Papa.parse(allPeople, papaConfig).data;
 
   // Update data column indexes based on header row
   const header = parsedPeople.shift();
+  NAME = header.indexOf("Name");
   ABP_LINK = header.indexOf("ABP Link");
   FIRST_LESSON = header.indexOf("First Lesson");
   PERCENT_PRINCIPLES_TAUGHT = header.indexOf("% Principles");
@@ -162,7 +172,7 @@ export function getPeopleProgress(allPeople) {
     )
   ).then((updatedPeople) => {
     return {
-      people: updatedPeople.map((person) => person.join("\t")).join("\n"),
+      people: Papa.unparse(updatedPeople, papaConfig),
       errors
     };
   });
