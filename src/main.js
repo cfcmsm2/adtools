@@ -11,26 +11,39 @@ import Emails from "./components/Emails";
 Vue.use(VueRouter);
 Vue.config.productionTip = false;
 
-window.fbAsyncInit = function () {
-  window.FB.init({
-    appId: "2870459646568696",
-    xfbml: true,
-    version: "v11.0"
+// TODO: move outside main.js
+function initFacebook() {
+  return new Promise((resolve) => {
+    const FBScript = document.createElement("script");
+    FBScript.src = "https://connect.facebook.net/en_US/sdk.js";
+    document.body.prepend(FBScript);
+
+    window.fbAsyncInit = function () {
+      window.FB.init({
+        appId: "2870459646568696",
+        xfbml: true,
+        version: "v11.0"
+      });
+
+      resolve();
+    };
   });
-};
+}
 
 document.title = "Facebook Tools";
 const appRoot = document.createElement("div");
 document.body.appendChild(appRoot);
 
-new Vue({
-  render: (h) => h(App),
-  router: new VueRouter({
-    routes: [
-      { path: "/sheets", component: Sheets },
-      { path: "/emails", component: Emails },
-      { path: "/stats", component: Stats },
-      { path: "/vibes", component: Vibes }
-    ]
-  })
-}).$mount(appRoot);
+initFacebook().then(() => {
+  new Vue({
+    render: (h) => h(App),
+    router: new VueRouter({
+      routes: [
+        { path: "/sheets", component: Sheets },
+        { path: "/emails", component: Emails },
+        { path: "/stats", component: Stats },
+        { path: "/vibes", component: Vibes }
+      ]
+    })
+  }).$mount(appRoot);
+});

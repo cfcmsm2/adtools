@@ -13,6 +13,7 @@ let DROPPED;
 
 const NUM_PRINCIPLES = 44;
 
+// TODO: memoize results
 async function loadPrinciplesAndCommitments() {
   let principles = await abAPIGet("/progress/principles").then((principles) =>
     principles
