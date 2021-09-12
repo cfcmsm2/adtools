@@ -4,24 +4,40 @@
     <div v-if="!loggedIn">
       <button class="pure-button" @click="logIn">Log in</button>
     </div>
-    <table v-else class="pure-table pure-table-bordered pure-table-striped">
-      <thead>
-        <tr>
-          <td>Page</td>
-          <td v-for="columnName in columnNames" :key="columnName">
-            {{ columnName }}
-          </td>
-        </tr>
-      </thead>
-      <tbody>
-        <tr v-for="[page, columnData] in Object.entries(pageData)" :key="page">
-          <td>{{ page }}</td>
-          <td v-for="columnName in columnNames" :key="columnName">
-            {{ columnData[columnName] }}
-          </td>
-        </tr>
-      </tbody>
-    </table>
+    <div v-else>
+      <div class="pure-form pure-form-aligned">
+        <fieldset>
+          <label for="time">Time Period</label>
+          <select v-model="period" id="time">
+            <option value="day">Last Day</option>
+            <option value="week">Last Week</option>
+            <option value="days_28">Last 28 Days</option>
+          </select>
+        </fieldset>
+      </div>
+
+      <table class="pure-table pure-table-bordered pure-table-striped">
+        <thead>
+          <tr>
+            <td>Page</td>
+            <td v-for="columnName in columnNames" :key="columnName">
+              {{ columnName }}
+            </td>
+          </tr>
+        </thead>
+        <tbody>
+          <tr
+            v-for="[page, columnData] in Object.entries(pageData)"
+            :key="page"
+          >
+            <td>{{ page }}</td>
+            <td v-for="columnName in columnNames" :key="columnName">
+              {{ columnData[columnName] }}
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
   </div>
 </template>
 
@@ -57,7 +73,22 @@ async function getInsights(token, category, time = "days_28") {
   }
 }
 
-function daysAgo(numDays) {
+function daysAgo(timePeriod) {
+  let numDays;
+  switch (timePeriod) {
+    case "day":
+      numDays = 1;
+      break;
+    case "week":
+      numDays = 7;
+      break;
+    case "days_28":
+      numDays = 28;
+      break;
+    default:
+      throw new Error("Invalid time period");
+  }
+
   return Date.now() - numDays * 24 * 60 * 60 * 1000;
 }
 const isLocal = (place) => /WY|NE|CO/.test(place);
@@ -88,24 +119,26 @@ const columns = [
     },
   },
   {
-    name: "28 Day Local Reach",
-    async getData(token) {
+    name: "Local Reach",
+    async getData(token, timePeriod) {
       const byCityReach = await getInsights(
         token,
-        "page_impressions_by_city_unique"
+        "page_impressions_by_city_unique",
+        timePeriod
       );
       const nonLocalReach = accumulateNonLocal(byCityReach);
       const organicReach = await getInsights(
         token,
-        "page_impressions_organic_unique"
+        "page_impressions_organic_unique",
+        timePeriod
       );
 
       return organicReach - nonLocalReach;
     },
   },
   {
-    name: "28 Day Local People Talking About This",
-    async getData(token) {
+    name: "Local People Talking About This",
+    async getData(token, timePeriod) {
       return get(
         `/me/insights/page_content_activity_by_city_unique/days_28?access_token=${token}`
       ).then((data) => {
@@ -118,18 +151,20 @@ const columns = [
   },
   {
     name: "Minute View",
-    async getData(token) {
-      return getInsights(token, "page_video_views_organic");
+    async getData(token, timePeriod) {
+      return getInsights(token, "page_video_views_organic", timePeriod);
     },
   },
   {
     name: "Engagement Rate",
-    async getData(token) {
+    async getData(token, timePeriod) {
       const pagePostData = (
         await get(
           `/me/feed?fields=insights.metric(post_engaged_users,post_impressions_organic_unique),created_time&access_token=${token}`
         )
-      ).data.filter((post) => new Date(post.created_time) > daysAgo(28));
+      ).data.filter(
+        (post) => new Date(post.created_time) > daysAgo(timePeriod)
+      );
 
       let totalEngagement = pagePostData.reduce(
         (total, post) =>
@@ -155,12 +190,14 @@ const columns = [
   {
     // post_impressions_fan_unique
     name: "Followers Reached",
-    async getData(token) {
+    async getData(token, timePeriod) {
       const pagePostData = (
         await get(
           `/me/feed?fields=insights.metric(post_impressions_fan_unique),created_time&access_token=${token}`
         )
-      ).data.filter((post) => new Date(post.created_time) > daysAgo(28));
+      ).data.filter(
+        (post) => new Date(post.created_time) > daysAgo(timePeriod)
+      );
 
       const totalFanReach = pagePostData.reduce(
         (total, post) => total + post.insights.data[0].values[0].value,
@@ -180,6 +217,7 @@ export default {
     return {
       pageData: {},
       loggedIn: false,
+      period: "days_28",
     };
   },
   computed: {
@@ -199,6 +237,11 @@ export default {
         // window.location = encodeURI("https://www.facebook.com/dialog/oauth?client_id=2870459646568696&redirect_uri=" + uri + "&response_type=token");
       }
     });
+  },
+  watch: {
+    period() {
+      this.loadData();
+    },
   },
   methods: {
     logIn() {
@@ -226,7 +269,7 @@ export default {
           return Promise.all(
             columns.map((column) => {
               return column
-                .getData(access_token)
+                .getData(access_token, this.period)
                 .then((result) =>
                   Vue.set(this.pageData[name], column.name, result)
                 );
