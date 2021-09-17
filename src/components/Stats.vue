@@ -115,7 +115,7 @@ const columns = [
     name: "Lifetime Local Page Likes",
     async getData(token) {
       const byCity = await getInsights(token, "page_fans_city", "");
-      return accumulateNonLocal(byCity);
+      return accumulateLocal(byCity);
     },
   },
   {
@@ -140,7 +140,7 @@ const columns = [
     name: "Local People Talking About This",
     async getData(token, timePeriod) {
       return get(
-        `/me/insights/page_content_activity_by_city_unique/days_28?access_token=${token}`
+        `/me/insights/page_content_activity_by_city_unique/${timePeriod}?access_token=${token}`
       ).then((data) => {
         if (!data.data[0]) {
           return "< 100";
@@ -153,6 +153,38 @@ const columns = [
     name: "Minute View",
     async getData(token, timePeriod) {
       return getInsights(token, "page_video_views_organic", timePeriod);
+    },
+  },
+  {
+    name: "Comments Responded To",
+    async getData(token, timePeriod, pageId) {
+      // TODO: comments limit? post limit? could be missing data
+
+      const posts = (
+        await get(
+          `/me/feed?access_token=${token}&limit=30&fields=comments.limit(500),created_time`
+        )
+      ).data.filter(
+        (post) => new Date(post.created_time) > daysAgo(timePeriod)
+      );
+
+      const postComments = posts
+        .map((post) => (post.comments ? post.comments.data : []))
+        .flat();
+
+      const postCommentReplies = (
+        await Promise.all(
+          postComments.map((comment) =>
+            get(`/${comment.id}/comments?access_token=${token}`).then((res) =>
+              res.data.filter(
+                (comment) => comment.from && comment.from.id === pageId
+              )
+            )
+          )
+        )
+      ).flat();
+
+      return toPercent(postCommentReplies.length / postComments.length);
     },
   },
   {
@@ -218,6 +250,7 @@ export default {
       pageData: {},
       loggedIn: false,
       period: "days_28",
+      data: {},
     };
   },
   computed: {
@@ -269,7 +302,7 @@ export default {
           return Promise.all(
             columns.map((column) => {
               return column
-                .getData(access_token, this.period)
+                .getData(access_token, this.period, id)
                 .then((result) =>
                   Vue.set(this.pageData[name], column.name, result)
                 );
