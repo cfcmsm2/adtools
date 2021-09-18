@@ -30,7 +30,9 @@
             v-for="[page, columnData] in Object.entries(pageData)"
             :key="page"
           >
-            <td>{{ page }}</td>
+            <td>
+              <strong>{{ page }}</strong>
+            </td>
             <td v-for="columnName in columnNames" :key="columnName">
               {{ columnData[columnName] }}
             </td>
@@ -62,11 +64,17 @@ function get(url) {
   return new Promise((resolve) => window.FB.api(url, resolve));
 }
 
-async function getInsights(token, category, time = "days_28") {
+async function getInsights(
+  token,
+  category,
+  time = "days_28",
+  datePreset = "yesterday"
+) {
   try {
     const result = await get(
-      `/me/insights/${category}/${time}?access_token=${token}&date_preset=yesterday`
+      `/me/insights/${category}/${time}?access_token=${token}&date_preset=${datePreset}`
     );
+    console.log(result);
     return result.data[0].values[0].value;
   } catch {
     return 0;
@@ -105,6 +113,10 @@ function accumulateLocal(data) {
     .reduce((a, b) => a + b[1], 0);
 }
 
+function sum(array) {
+  return array.reduce((a, b) => a + b, 0);
+}
+
 function toPercent(number) {
   return Math.round(number * 10000) / 100 + "%";
 }
@@ -114,8 +126,17 @@ const columns = [
   {
     name: "Lifetime Local Page Likes",
     async getData(token) {
-      const byCity = await getInsights(token, "page_fans_city", "");
-      return accumulateLocal(byCity);
+      const byCity = await getInsights(token, "page_fans_city", "", "");
+
+      const localLikes = accumulateLocal(byCity);
+      const allLikesWithCity =
+        accumulateLocal(byCity) + accumulateNonLocal(byCity);
+
+      const percentLocal = localLikes / allLikesWithCity;
+
+      const totalLikes = await getInsights(token, "page_fans", "");
+
+      return Math.round(totalLikes * percentLocal);
     },
   },
   {
@@ -133,115 +154,121 @@ const columns = [
         timePeriod
       );
 
+      // There's no metric specifically for organic reach by city.
+      // But our ads are only run locally! Since there's no paid
+      // non-local reach, Local Organic Reach = Organic Reach - Non-Local Reach
       return organicReach - nonLocalReach;
     },
   },
-  {
-    name: "Local People Talking About This",
-    async getData(token, timePeriod) {
-      return get(
-        `/me/insights/page_content_activity_by_city_unique/${timePeriod}?access_token=${token}`
-      ).then((data) => {
-        if (!data.data[0]) {
-          return "< 100";
-        }
-        return accumulateLocal(data.data[0].values[0].value);
-      });
-    },
-  },
-  {
-    name: "Minute View",
-    async getData(token, timePeriod) {
-      return getInsights(token, "page_video_views_organic", timePeriod);
-    },
-  },
-  {
-    name: "Comments Responded To",
-    async getData(token, timePeriod, pageId) {
-      // TODO: comments limit? post limit? could be missing data
+  // {
+  //   name: "Local People Talking About This",
+  //   async getData(token, timePeriod) {
+  //     return get(
+  //       `/me/insights/page_content_activity_by_city_unique/${timePeriod}?access_token=${token}`
+  //     ).then((data) => {
+  //       if (!data.data[0]) {
+  //         return "< 100";
+  //       }
+  //       return accumulateLocal(data.data[0].values[0].value);
+  //     });
+  //   },
+  // },
+  // {
+  //   name: "Minute View",
+  //   async getData(token, timePeriod) {
+  //     return getInsights(token, "page_video_views_organic", timePeriod);
+  //   },
+  // },
+  // {
+  //   name: "Comments Responded To",
+  //   metrics: {
 
-      const posts = (
-        await get(
-          `/me/feed?access_token=${token}&limit=30&fields=comments.limit(500),created_time`
-        )
-      ).data.filter(
-        (post) => new Date(post.created_time) > daysAgo(timePeriod)
-      );
+  //   },
+  //   async getData(token, timePeriod, pageId) {
+  //     // TODO: comments limit? post limit? could be missing data
 
-      const postComments = posts
-        .map((post) => (post.comments ? post.comments.data : []))
-        .flat();
+  //     const posts = (
+  //       await get(
+  //         `/me/feed?access_token=${token}&limit=30&fields=comments.limit(500),created_time`
+  //       )
+  //     ).data.filter(
+  //       (post) => new Date(post.created_time) > daysAgo(timePeriod)
+  //     );
 
-      const postCommentReplies = (
-        await Promise.all(
-          postComments.map((comment) =>
-            get(`/${comment.id}/comments?access_token=${token}`).then((res) =>
-              res.data.filter(
-                (comment) => comment.from && comment.from.id === pageId
-              )
-            )
-          )
-        )
-      ).flat();
+  //     const postComments = posts
+  //       .map((post) => (post.comments ? post.comments.data : []))
+  //       .flat();
 
-      return toPercent(postCommentReplies.length / postComments.length);
-    },
-  },
-  {
-    name: "Engagement Rate",
-    async getData(token, timePeriod) {
-      const pagePostData = (
-        await get(
-          `/me/feed?fields=insights.metric(post_engaged_users,post_impressions_organic_unique),created_time&access_token=${token}`
-        )
-      ).data.filter(
-        (post) => new Date(post.created_time) > daysAgo(timePeriod)
-      );
+  //     const postCommentReplies = (
+  //       await Promise.all(
+  //         postComments.map((comment) =>
+  //           get(`/${comment.id}/comments?access_token=${token}`).then((res) =>
+  //             res.data.filter(
+  //               (comment) => comment.from && comment.from.id === pageId
+  //             )
+  //           )
+  //         )
+  //       )
+  //     ).flat();
 
-      let totalEngagement = pagePostData.reduce(
-        (total, post) =>
-          total +
-          post.insights.data.find(
-            (insight) => insight.name === "post_engaged_users"
-          ).values[0].value,
-        0
-      );
-      let totalReach = pagePostData.reduce(
-        (total, post) =>
-          total +
-          post.insights.data.find(
-            (insight) => insight.name === "post_impressions_organic_unique"
-          ).values[0].value,
-        0
-      );
+  //     return toPercent(postCommentReplies.length / postComments.length);
+  //   },
+  // },
+  // {
+  //   name: "Engagement Rate",
+  //   async getData(token, timePeriod) {
+  //     const pagePostData = (
+  //       await get(
+  //         `/me/feed?fields=insights.metric(post_engaged_users,post_impressions_organic_unique),created_time&access_token=${token}`
+  //       )
+  //     ).data.filter(
+  //       (post) => new Date(post.created_time) > daysAgo(timePeriod)
+  //     );
 
-      if (!totalReach) return "N/A";
-      return toPercent(totalEngagement / totalReach);
-    },
-  },
-  {
-    // post_impressions_fan_unique
-    name: "Followers Reached",
-    async getData(token, timePeriod) {
-      const pagePostData = (
-        await get(
-          `/me/feed?fields=insights.metric(post_impressions_fan_unique),created_time&access_token=${token}`
-        )
-      ).data.filter(
-        (post) => new Date(post.created_time) > daysAgo(timePeriod)
-      );
+  //     let totalEngagement = pagePostData.reduce(
+  //       (total, post) =>
+  //         total +
+  //         post.insights.data.find(
+  //           (insight) => insight.name === "post_engaged_users"
+  //         ).values[0].value,
+  //       0
+  //     );
+  //     let totalReach = pagePostData.reduce(
+  //       (total, post) =>
+  //         total +
+  //         post.insights.data.find(
+  //           (insight) => insight.name === "post_impressions_organic_unique"
+  //         ).values[0].value,
+  //       0
+  //     );
 
-      const totalFanReach = pagePostData.reduce(
-        (total, post) => total + post.insights.data[0].values[0].value,
-        0
-      );
-      const averageFanReach = totalFanReach / pagePostData.length;
+  //     if (!totalReach) return "N/A";
+  //     return toPercent(totalEngagement / totalReach);
+  //   },
+  // },
+  // {
+  //   // post_impressions_fan_unique
+  //   name: "Followers Reached",
+  //   async getData(token, timePeriod) {
+  //     const pagePostData = (
+  //       await get(
+  //         `/me/feed?fields=insights.metric(post_impressions_fan_unique),created_time&access_token=${token}`
+  //       )
+  //     ).data.filter(
+  //       (post) => new Date(post.created_time) > daysAgo(timePeriod)
+  //     );
 
-      const likes = await getInsights(token, "page_fans", "");
+  //     const totalFanReach = pagePostData.reduce(
+  //       (total, post) => total + post.insights.data[0].values[0].value,
+  //       0
+  //     );
+  //     const averageFanReach = totalFanReach / pagePostData.length;
 
-      return toPercent(averageFanReach / likes);
-    },
-  },
+  //     const likes = await getInsights(token, "page_fans", "");
+
+  //     return toPercent(averageFanReach / likes);
+  //   },
+  // },
 ];
 
 export default {
@@ -250,7 +277,7 @@ export default {
       pageData: {},
       loggedIn: false,
       period: "days_28",
-      data: {},
+      data: null,
     };
   },
   computed: {
@@ -259,17 +286,7 @@ export default {
     },
   },
   mounted() {
-    // var uri = encodeURI(window.location.href);
-    window.FB.getLoginStatus((response) => {
-      if (response.status === "connected") {
-        this.loggedIn = true;
-        this.loadData();
-      } else {
-        this.loggedIn = false;
-        // FB.login();
-        // window.location = encodeURI("https://www.facebook.com/dialog/oauth?client_id=2870459646568696&redirect_uri=" + uri + "&response_type=token");
-      }
-    });
+    window.FB.getLoginStatus(this.authCallback.bind(this));
   },
   watch: {
     period() {
@@ -278,14 +295,16 @@ export default {
   },
   methods: {
     logIn() {
-      window.FB.login();
-
-      window.FB.getLoginStatus((response) => {
-        if (response.status === "connected") {
-          this.loggedIn = true;
-          this.loadData();
-        }
-      });
+      window.FB.login(this.authCallback.bind(this));
+    },
+    authCallback(response) {
+      this.data = response;
+      if (response.status === "connected") {
+        this.loggedIn = true;
+        this.loadData();
+      } else {
+        this.loggedIn = false;
+      }
     },
     async loadData() {
       const { data } = await get(
