@@ -74,7 +74,6 @@ async function getInsights(
     const result = await get(
       `/me/insights/${category}/${time}?access_token=${token}&date_preset=${datePreset}`
     );
-    console.log(result);
     return result.data[0].values[0].value;
   } catch {
     return 0;
@@ -117,6 +116,10 @@ function sum(array) {
   return array.reduce((a, b) => a + b, 0);
 }
 
+function unique(array) {
+  return Array.from(new Set(array));
+}
+
 function toPercent(number) {
   return Math.round(number * 10000) / 100 + "%";
 }
@@ -125,7 +128,7 @@ function toPercent(number) {
 const columns = [
   {
     name: "Lifetime Local Page Likes",
-    async getData(token) {
+    async getData({ token }) {
       const byCity = await getInsights(token, "page_fans_city", "", "");
 
       const localLikes = accumulateLocal(byCity);
@@ -141,7 +144,7 @@ const columns = [
   },
   {
     name: "Local Reach",
-    async getData(token, timePeriod) {
+    async getData({ token, timePeriod }) {
       const byCityReach = await getInsights(
         token,
         "page_impressions_by_city_unique",
@@ -162,7 +165,7 @@ const columns = [
   },
   // {
   //   name: "Local People Talking About This",
-  //   async getData(token, timePeriod) {
+  //   async getData({token, timePeriod}) {
   //     return get(
   //       `/me/insights/page_content_activity_by_city_unique/${timePeriod}?access_token=${token}`
   //     ).then((data) => {
@@ -173,102 +176,100 @@ const columns = [
   //     });
   //   },
   // },
-  // {
-  //   name: "Minute View",
-  //   async getData(token, timePeriod) {
-  //     return getInsights(token, "page_video_views_organic", timePeriod);
-  //   },
-  // },
-  // {
-  //   name: "Comments Responded To",
-  //   metrics: {
+  {
+    name: "Average Seconds Viewed",
+    postMetrics: ["post_video_avg_time_watched"],
+    async getData({ posts }) {
+      if (!posts.length) return "No posts";
+      const viewTime = posts
+        .map(
+          (post) =>
+            post.insights.data.find(
+              (insight) => insight.name === "post_video_avg_time_watched"
+            ).values[0].value
+        )
+        .filter((viewTime) => viewTime > 0);
 
-  //   },
-  //   async getData(token, timePeriod, pageId) {
-  //     // TODO: comments limit? post limit? could be missing data
+      if (!viewTime.length) return "No videos";
 
-  //     const posts = (
-  //       await get(
-  //         `/me/feed?access_token=${token}&limit=30&fields=comments.limit(500),created_time`
-  //       )
-  //     ).data.filter(
-  //       (post) => new Date(post.created_time) > daysAgo(timePeriod)
-  //     );
+      return Math.round(sum(viewTime) / viewTime.length) / 1000;
+    },
+  },
+  {
+    name: "Comments Responded To",
+    postFields: ["comments.limit(500)", "created_time"],
+    async getData({ token, posts, pageId }) {
+      if (!posts.length) return "No posts";
 
-  //     const postComments = posts
-  //       .map((post) => (post.comments ? post.comments.data : []))
-  //       .flat();
+      const postComments = posts
+        .map((post) => (post.comments ? post.comments.data : []))
+        .flat();
 
-  //     const postCommentReplies = (
-  //       await Promise.all(
-  //         postComments.map((comment) =>
-  //           get(`/${comment.id}/comments?access_token=${token}`).then((res) =>
-  //             res.data.filter(
-  //               (comment) => comment.from && comment.from.id === pageId
-  //             )
-  //           )
-  //         )
-  //       )
-  //     ).flat();
+      if (!postComments.length) return "No comments";
 
-  //     return toPercent(postCommentReplies.length / postComments.length);
-  //   },
-  // },
-  // {
-  //   name: "Engagement Rate",
-  //   async getData(token, timePeriod) {
-  //     const pagePostData = (
-  //       await get(
-  //         `/me/feed?fields=insights.metric(post_engaged_users,post_impressions_organic_unique),created_time&access_token=${token}`
-  //       )
-  //     ).data.filter(
-  //       (post) => new Date(post.created_time) > daysAgo(timePeriod)
-  //     );
+      const postCommentReplies = (
+        await Promise.all(
+          postComments.map((comment) =>
+            get(`/${comment.id}/comments?access_token=${token}`).then((res) =>
+              res.data.filter(
+                (comment) => comment.from && comment.from.id === pageId
+              )
+            )
+          )
+        )
+      ).flat();
 
-  //     let totalEngagement = pagePostData.reduce(
-  //       (total, post) =>
-  //         total +
-  //         post.insights.data.find(
-  //           (insight) => insight.name === "post_engaged_users"
-  //         ).values[0].value,
-  //       0
-  //     );
-  //     let totalReach = pagePostData.reduce(
-  //       (total, post) =>
-  //         total +
-  //         post.insights.data.find(
-  //           (insight) => insight.name === "post_impressions_organic_unique"
-  //         ).values[0].value,
-  //       0
-  //     );
+      return toPercent(postCommentReplies.length / postComments.length);
+    },
+  },
+  {
+    name: "Engagement Rate",
+    postMetrics: ["post_engaged_users", "post_impressions_organic_unique"],
+    async getData({ token, posts }) {
+      if (!posts.length) return "No posts";
 
-  //     if (!totalReach) return "N/A";
-  //     return toPercent(totalEngagement / totalReach);
-  //   },
-  // },
-  // {
-  //   // post_impressions_fan_unique
-  //   name: "Followers Reached",
-  //   async getData(token, timePeriod) {
-  //     const pagePostData = (
-  //       await get(
-  //         `/me/feed?fields=insights.metric(post_impressions_fan_unique),created_time&access_token=${token}`
-  //       )
-  //     ).data.filter(
-  //       (post) => new Date(post.created_time) > daysAgo(timePeriod)
-  //     );
+      let totalEngagement = sum(
+        posts.map(
+          (post) =>
+            post.insights.data.find(
+              (insight) => insight.name === "post_engaged_users"
+            ).values[0].value
+        )
+      );
+      let totalReach = sum(
+        posts.map(
+          (post) =>
+            post.insights.data.find(
+              (insight) => insight.name === "post_impressions_organic_unique"
+            ).values[0].value
+        )
+      );
 
-  //     const totalFanReach = pagePostData.reduce(
-  //       (total, post) => total + post.insights.data[0].values[0].value,
-  //       0
-  //     );
-  //     const averageFanReach = totalFanReach / pagePostData.length;
+      if (!totalReach) return "N/A";
+      return toPercent(totalEngagement / totalReach);
+    },
+  },
+  {
+    name: "Followers Reached",
+    postMetrics: ["post_impressions_fan_unique"],
+    async getData({ token, posts }) {
+      if (!posts.length) return "No posts";
 
-  //     const likes = await getInsights(token, "page_fans", "");
+      const totalFanReach = sum(
+        posts.map(
+          (post) =>
+            post.insights.data.find(
+              (insight) => insight.name === "post_impressions_fan_unique"
+            ).values[0].value
+        )
+      );
+      const averageFanReach = totalFanReach / posts.length;
 
-  //     return toPercent(averageFanReach / likes);
-  //   },
-  // },
+      const likes = await getInsights(token, "page_fans", "");
+
+      return toPercent(averageFanReach / likes);
+    },
+  },
 ];
 
 export default {
@@ -277,7 +278,6 @@ export default {
       pageData: {},
       loggedIn: false,
       period: "days_28",
-      data: null,
     };
   },
   computed: {
@@ -307,21 +307,46 @@ export default {
       }
     },
     async loadData() {
+      let postFields = unique(
+        columns
+          .reduce((fields, column) => fields.concat(column.postFields), [])
+          .filter((field) => field)
+          .concat("created_time")
+      ).join(",");
+      let postMetrics = unique(
+        columns
+          .reduce((fields, column) => fields.concat(column.postMetrics), [])
+          .filter((field) => field)
+      ).join(",");
+
       const { data } = await get(
         "/me/accounts?fields=access_token,name,id&limit=100"
       );
 
       await Promise.all(
-        data.map(({ access_token, name, id }) => {
+        data.map(async ({ access_token, name, id }) => {
           if (!PAGE_IDS.includes(id)) {
             return Promise.resolve();
           }
+
+          const posts = (
+            await get(
+              `/me/feed?access_token=${access_token}&limit=30&fields=${postFields},insights.metric(${postMetrics})`
+            )
+          ).data.filter(
+            (post) => new Date(post.created_time) > daysAgo(this.period)
+          );
 
           Vue.set(this.pageData, name, {});
           return Promise.all(
             columns.map((column) => {
               return column
-                .getData(access_token, this.period, id)
+                .getData({
+                  token: access_token,
+                  timePeriod: this.period,
+                  posts,
+                  pageId: id,
+                })
                 .then((result) =>
                   Vue.set(this.pageData[name], column.name, result)
                 );
