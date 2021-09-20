@@ -45,6 +45,7 @@
 
 <script>
 import Vue from "vue";
+import { FB } from "../FB";
 
 const PAGE_IDS = [
   "112076063796073",
@@ -60,10 +61,6 @@ const PAGE_IDS = [
   "112969893700175",
 ];
 
-function get(url) {
-  return new Promise((resolve) => window.FB.api(url, resolve));
-}
-
 async function getInsights(
   token,
   category,
@@ -71,7 +68,7 @@ async function getInsights(
   datePreset = "yesterday"
 ) {
   try {
-    const result = await get(
+    const result = await FB.get(
       `/me/insights/${category}/${time}?access_token=${token}&date_preset=${datePreset}`
     );
     return result.data[0].values[0].value;
@@ -124,7 +121,6 @@ function toPercent(number) {
   return Math.round(number * 10000) / 100 + "%";
 }
 
-// TODO: Improve performance using API to get multiple metrics at once
 const columns = [
   {
     name: "Lifetime Local Page Likes",
@@ -166,7 +162,7 @@ const columns = [
   // {
   //   name: "Local People Talking About This",
   //   async getData({token, timePeriod}) {
-  //     return get(
+  //     return FB.get(
   //       `/me/insights/page_content_activity_by_city_unique/${timePeriod}?access_token=${token}`
   //     ).then((data) => {
   //       if (!data.data[0]) {
@@ -210,7 +206,9 @@ const columns = [
       const postCommentReplies = (
         await Promise.all(
           postComments.map((comment) =>
-            get(`/${comment.id}/comments?access_token=${token}`).then((res) =>
+            FB.get(
+              `/${comment.id}/comments?access_token=${token}`
+            ).then((res) =>
               res.data.filter(
                 (comment) => comment.from && comment.from.id === pageId
               )
@@ -225,7 +223,7 @@ const columns = [
   {
     name: "Engagement Rate",
     postMetrics: ["post_engaged_users", "post_impressions_organic_unique"],
-    async getData({ token, posts }) {
+    async getData({ posts }) {
       if (!posts.length) return "No posts";
 
       let totalEngagement = sum(
@@ -285,27 +283,21 @@ export default {
       return columns.map((column) => column.name);
     },
   },
-  mounted() {
-    window.FB.getLoginStatus(this.authCallback.bind(this));
+  async mounted() {
+    this.loggedIn = await FB.isLoggedIn();
   },
   watch: {
     period() {
       this.loadData();
     },
-  },
-  methods: {
-    logIn() {
-      window.FB.login(this.authCallback.bind(this));
-    },
-    authCallback(response) {
-      this.data = response;
-      if (response.status === "connected") {
-        this.loggedIn = true;
+    loggedIn() {
+      if (this.loggedIn) {
         this.loadData();
-      } else {
-        this.loggedIn = false;
       }
     },
+  },
+  methods: {
+    logIn: FB.logIn,
     async loadData() {
       let postFields = unique(
         columns
@@ -319,7 +311,7 @@ export default {
           .filter((field) => field)
       ).join(",");
 
-      const { data } = await get(
+      const { data } = await FB.get(
         "/me/accounts?fields=access_token,name,id&limit=100"
       );
 
@@ -330,7 +322,7 @@ export default {
           }
 
           const posts = (
-            await get(
+            await FB.get(
               `/me/feed?access_token=${access_token}&limit=30&fields=${postFields},insights.metric(${postMetrics})`
             )
           ).data.filter(
