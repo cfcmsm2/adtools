@@ -13,8 +13,10 @@ let DROPPED;
 
 const NUM_PRINCIPLES = 44;
 
-// TODO: memoize results
-async function loadPrinciplesAndCommitments() {
+let _cache = null;
+async function getPrinciplesAndCommitments() {
+  if (_cache) return _cache;
+
   let principles = await abAPIGet("/progress/principles").then((principles) =>
     principles
       .map((item) => item.principles)
@@ -25,7 +27,8 @@ async function loadPrinciplesAndCommitments() {
     "/progress/commitments"
   ).then((commitments) => commitments.map((commitment) => commitment.id));
 
-  return { principles, commitments };
+  _cache = { principles, commitments };
+  return _cache;
 }
 
 async function isNewPerson(timeline, personId) {
@@ -41,7 +44,7 @@ async function isNewPerson(timeline, personId) {
 
   let principle = false;
   let commitment = false;
-  const { principles, commitments } = await loadPrinciplesAndCommitments();
+  const { principles, commitments } = await getPrinciplesAndCommitments();
 
   const npEvent = teachingEvents.find((teachingEvent) => {
     const eventPerson = teachingEvent.personEvents.find(
