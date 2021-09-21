@@ -2,7 +2,7 @@
   <div>
     <h2>Page Local Engagement Data</h2>
     <div v-if="!loggedIn">
-      <button class="pure-button" @click="logIn">Log in</button>
+      <button class="pure-button" @click="login">Log in</button>
     </div>
     <div v-else>
       <div class="pure-form pure-form-aligned">
@@ -274,7 +274,6 @@ export default {
   data() {
     return {
       pageData: {},
-      loggedIn: false,
       period: "days_28",
     };
   },
@@ -282,22 +281,25 @@ export default {
     columnNames() {
       return columns.map((column) => column.name);
     },
-  },
-  async mounted() {
-    this.loggedIn = await FB.isLoggedIn();
+    loggedIn() {
+      return FB.loggedIn;
+    },
   },
   watch: {
     period() {
       this.loadData();
     },
-    loggedIn() {
-      if (this.loggedIn) {
-        this.loadData();
-      }
+    loggedIn: {
+      immediate: true,
+      handler() {
+        if (this.loggedIn) {
+          this.loadData();
+        }
+      },
     },
   },
   methods: {
-    logIn: FB.logIn,
+    login: FB.login.bind(FB),
     async loadData() {
       let postFields = unique(
         columns

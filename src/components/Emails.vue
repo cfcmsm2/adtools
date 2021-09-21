@@ -18,11 +18,9 @@
     </ul>
 
     <h2>Names</h2>
-    <ul>
-      <li v-for="name in names" :key="name">
-        {{ name }}
-      </li>
-    </ul>
+    <div>
+      {{ names.join(",") }}
+    </div>
   </form>
 </template>
 
