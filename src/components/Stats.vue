@@ -97,20 +97,30 @@ function daysAgo(timePeriod) {
 }
 const isLocal = (place) => /WY|NE|CO/.test(place);
 
+const sum = (array) => array.reduce((a, b) => a + b, 0);
+
 function accumulateNonLocal(data) {
-  return Object.entries(data)
-    .filter((place) => !isLocal(place[0]))
-    .reduce((a, b) => a + b[1], 0);
+  return sum(
+    Object.entries(data)
+      .filter((place) => !isLocal(place[0]))
+      .map((place) => place[1])
+  );
 }
 
 function accumulateLocal(data) {
-  return Object.entries(data)
-    .filter((place) => isLocal(place[0]))
-    .reduce((a, b) => a + b[1], 0);
+  return sum(
+    Object.entries(data)
+      .filter((place) => isLocal(place[0]))
+      .map((place) => place[1])
+  );
 }
 
-function sum(array) {
-  return array.reduce((a, b) => a + b, 0);
+function postInsight(posts, insightName) {
+  return posts.map(
+    (post) =>
+      post.insights.data.find((insight) => insight.name === insightName)
+        .values[0].value
+  );
 }
 
 function unique(array) {
@@ -177,14 +187,9 @@ const columns = [
     postMetrics: ["post_video_avg_time_watched"],
     async getData({ posts }) {
       if (!posts.length) return "No posts";
-      const viewTime = posts
-        .map(
-          (post) =>
-            post.insights.data.find(
-              (insight) => insight.name === "post_video_avg_time_watched"
-            ).values[0].value
-        )
-        .filter((viewTime) => viewTime > 0);
+      const viewTime = postInsight(posts, "post_video_avg_time_watched").filter(
+        (viewTime) => viewTime > 0
+      );
 
       if (!viewTime.length) return "No videos";
 
@@ -205,15 +210,14 @@ const columns = [
 
       const postCommentReplies = (
         await Promise.all(
-          postComments.map((comment) =>
-            FB.get(
-              `/${comment.id}/comments?access_token=${token}`
-            ).then((res) =>
-              res.data.filter(
-                (comment) => comment.from && comment.from.id === pageId
-              )
-            )
-          )
+          postComments.map(async (comment) => {
+            const comments = (
+              await FB.get(`/${comment.id}/comments?access_token=${token}`)
+            ).data;
+            return comments.filter(
+              (comment) => comment.from && comment.from.id === pageId
+            );
+          })
         )
       ).flat();
 
@@ -226,21 +230,9 @@ const columns = [
     async getData({ posts }) {
       if (!posts.length) return "No posts";
 
-      let totalEngagement = sum(
-        posts.map(
-          (post) =>
-            post.insights.data.find(
-              (insight) => insight.name === "post_engaged_users"
-            ).values[0].value
-        )
-      );
+      let totalEngagement = sum(postInsight(posts, "post_engaged_users"));
       let totalReach = sum(
-        posts.map(
-          (post) =>
-            post.insights.data.find(
-              (insight) => insight.name === "post_impressions_organic_unique"
-            ).values[0].value
-        )
+        postInsight(posts, "post_impressions_organic_unique")
       );
 
       if (!totalReach) return "N/A";
@@ -254,12 +246,7 @@ const columns = [
       if (!posts.length) return "No posts";
 
       const totalFanReach = sum(
-        posts.map(
-          (post) =>
-            post.insights.data.find(
-              (insight) => insight.name === "post_impressions_fan_unique"
-            ).values[0].value
-        )
+        postInsight(posts, "post_impressions_fan_unique")
       );
       const averageFanReach = totalFanReach / posts.length;
 
