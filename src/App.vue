@@ -2,11 +2,6 @@
   <main id="app">
     <div class="pure-menu pure-menu-horizontal">
       <ul class="pure-menu-list">
-        <router-link to="/sheets" v-slot="{ href, navigate, isActive }" custom>
-          <li :class="['pure-menu-item', isActive && 'pure-menu-selected']">
-            <a class="pure-menu-link" :href="href" @click="navigate">Sheets</a>
-          </li>
-        </router-link>
         <router-link to="/vibes" v-slot="{ href, navigate, isActive }" custom>
           <li :class="['pure-menu-item', isActive && 'pure-menu-selected']">
             <a class="pure-menu-link" :href="href" @click="navigate">Vibes</a>
@@ -20,6 +15,13 @@
         <router-link to="/stats" v-slot="{ href, navigate, isActive }" custom>
           <li :class="['pure-menu-item', isActive && 'pure-menu-selected']">
             <a class="pure-menu-link" :href="href" @click="navigate">Stats</a>
+          </li>
+        </router-link>
+        <router-link to="/adstats" v-slot="{ href, navigate, isActive }" custom>
+          <li :class="['pure-menu-item', isActive && 'pure-menu-selected']">
+            <a class="pure-menu-link" :href="href" @click="navigate"
+              >Ad Stats</a
+            >
           </li>
         </router-link>
       </ul>
