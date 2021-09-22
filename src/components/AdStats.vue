@@ -131,7 +131,7 @@ export default {
 
       const data = (
         await FB.get(
-          "/act_439329213748764/ads?fields=creative.fields(title,body,image_hash,effective_object_story_id),name,adset.fields(targeting,promoted_object),insights.fields(ad_id,reach,impressions,actions,spend,objective).date_preset(maximum)&limit=10"
+          "/act_439329213748764/ads?fields=creative.fields(title,body,image_hash,effective_object_story_id),name,adset.fields(targeting,promoted_object),insights.fields(ad_id,reach,impressions,actions,spend,objective).date_preset(maximum)&limit=1000"
         )
       ).data;
       console.log(data);
