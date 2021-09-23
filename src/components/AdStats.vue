@@ -62,18 +62,31 @@ function audienceType(targeting) {
     return "LOOKALIKE";
   }
 
-  if (targeting.interests) {
-    return "INTEREST"; // TODO
+  if (
+    targeting.interests ||
+    targeting.behaviors ||
+    (targeting.flexible_spec &&
+      targeting.flexible_spec.find((spec) => spec.interests))
+  ) {
+    return "INTEREST";
   }
 
   return "BROAD";
 }
+
+function dateToday() {
+  const today = new Date();
+  return `${today.getFullYear()}-${today.getMonth() + 1}-${today.getDate()}`;
+}
+
+const getAction = (actions) => (actionType) => {
+  if (!actions) return 0;
+  return actions.find((action) => Number(action.action_type === actionType))
+    .value;
+};
 function results(insightsData) {
   const objective = insightsData.objective;
-  const action = (actionType) =>
-    insightsData.actions.find((action) =>
-      Number(action.action_type === actionType)
-    ).value;
+  const action = getAction(insightsData.actions);
 
   try {
     switch (objective) {
@@ -116,67 +129,71 @@ function adCategory(adName) {
   return "Other"; // Or adName??
 }
 
-const isSpanish = (targeting) => !!targeting.locales;
+const isSpanish = (targeting) =>
+  Boolean(
+    targeting.locales &&
+      targeting.locales.find((locale) => locale === 23 || locale === 7)
+  );
 
 export default {
   data() {
     return {
       loading: false,
-      adInfo: null,
+      adInfo: [],
     };
   },
   methods: {
     async downloadData() {
       this.loading = true;
 
-      const data = (
-        await FB.get(
-          "/act_439329213748764/ads?fields=creative.fields(title,body,image_hash,effective_object_story_id),name,adset.fields(targeting,promoted_object),insights.fields(ad_id,reach,impressions,actions,spend,objective).date_preset(maximum)&limit=1000"
-        )
-      ).data;
-      console.log(data);
-      const adInfo = data.map((ad) => {
-        const adInfo = {
-          "Ad ID": ad.id,
-          "Post Permalink": genPermalink(ad),
-          Objective: ad.insights && ad.insights.data[0].objective,
-          "Page ID":
-            ad.adset.promoted_object && ad.adset.promoted_object.page_id,
-          Page:
-            ad.adset.promoted_object &&
-            ID_TO_PAGE[ad.adset.promoted_object.page_id],
-          "Audience Type": audienceType(ad.adset.targeting),
-          "Ad Name": ad.name,
-          "Ad Category": adCategory(ad.name),
-          "Image Hash": ad.creative && ad.creative.image_hash,
-          "Spanish?": isSpanish(ad.adset.targeting),
-          Reach: ad.insights && Number(ad.insights.data[0].reach),
-          Frequency:
-            ad.insights &&
-            (
+      const AD_ACCOUNTS = [
+        "act_439329213748764", // Current
+        "act_1313624522157797", // Old
+        "act_596528517690671", // WY
+      ];
+
+      this.adInfo = [];
+      for (const accountId of AD_ACCOUNTS) {
+        const { data } = await FB.get(
+          `/${accountId}/ads?fields=name,` +
+            "creative.fields(id,title,effective_object_story_id,actor_id)," +
+            "campaign.fields(objective)," +
+            "adset.fields(targeting)," +
+            "insights.fields(ad_id,reach,impressions,actions,spend,objective).date_preset(maximum)" +
+            '&filtering=[{field:"ad.impressions",operator:"GREATER_THAN",value:0}]&limit=1000'
+        );
+        console.log(data);
+
+        const accountAds = data.map((ad) => {
+          return {
+            "Ad ID": ad.id,
+            "Post Permalink": genPermalink(ad),
+            Objective: ad.campaign.objective,
+            "Page ID": ad.creative.actor_id,
+            Page: ID_TO_PAGE[ad.creative.actor_id],
+            "Audience Type": audienceType(ad.adset.targeting),
+            "Ad Name": ad.name,
+            "Ad Category": adCategory(ad.name),
+            "Creative ID": ad.creative.id,
+            "Spanish?": isSpanish(ad.adset.targeting).toString().toUpperCase(),
+            Reach: Number(ad.insights.data[0].reach),
+            Frequency: (
               Number(ad.insights.data[0].impressions) /
               Number(ad.insights.data[0].reach)
             ).toFixed(2),
-          "Amount Spent": ad.insights && Number(ad.insights.data[0].spend),
-          Results: ad.insights && results(ad.insights.data[0]),
-        };
+            "Amount Spent": Number(ad.insights.data[0].spend),
+            Results: results(ad.insights.data[0]),
+            Engagement: getAction(ad.insights.data[0].actions)(
+              "post_engagement"
+            ),
+          };
+        });
 
-        try {
-          adInfo.Engagement = Number(
-            ad.insights.data[0].actions.find(
-              (action) => action.action_type === "post_engagement"
-            ).value
-          );
-        } catch (e) {
-          adInfo.Engagement = 0;
-        }
-        return adInfo;
-      });
+        this.adInfo.push(...accountAds);
+      }
 
-      this.adInfo = adInfo;
-
-      const csvAdInfo = Papa.unparse(adInfo, { header: true });
-      fileDownload(csvAdInfo, "ad_info.csv");
+      const csvAdInfo = Papa.unparse(this.adInfo, { header: true });
+      fileDownload(csvAdInfo, `ad_info_${dateToday()}.csv`);
 
       this.loading = false;
     },
