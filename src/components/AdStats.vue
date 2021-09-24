@@ -1,14 +1,19 @@
 <template>
   <div>
     <h1>Ad Stats</h1>
-    <button
-      class="pure-button pure-button-primary"
-      @click="downloadData"
-      :disabled="loading"
-    >
-      {{ !loading ? "Download" : "Loading..." }}
-    </button>
-    <pre v-if="adInfo">{{ JSON.stringify(adInfo, null, 2) }}</pre>
+    <div v-if="!FB.loggedIn">
+      <button class="pure-button" @click="FB.login()">Log in</button>
+    </div>
+    <div v-else>
+      <button
+        class="pure-button pure-button-primary"
+        @click="downloadData"
+        :disabled="loading"
+      >
+        {{ !loading ? "Download" : "Loading..." }}
+      </button>
+      <pre v-if="adInfo">{{ JSON.stringify(adInfo, null, 2) }}</pre>
+    </div>
   </div>
 </template>
 
@@ -140,6 +145,7 @@ export default {
     return {
       loading: false,
       adInfo: [],
+      FB,
     };
   },
   methods: {

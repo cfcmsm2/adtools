@@ -1,8 +1,8 @@
 <template>
   <div>
-    <h2>Page Local Engagement Data</h2>
-    <div v-if="!loggedIn">
-      <button class="pure-button" @click="login">Log in</button>
+    <h1>Page Local Engagement Data</h1>
+    <div v-if="!FB.loggedIn">
+      <button class="pure-button" @click="login()">Log in</button>
     </div>
     <div v-else>
       <div class="pure-form pure-form-aligned">
@@ -198,7 +198,7 @@ const columns = [
   },
   {
     name: "Comments Responded To",
-    postFields: ["comments.limit(500)", "created_time"],
+    postFields: ["comments.limit(500)"],
     async getData({ token, posts, pageId }) {
       if (!posts.length) return "No posts";
 
@@ -212,14 +212,16 @@ const columns = [
         await Promise.all(
           postComments.map(async (comment) => {
             const comments = (
-              await FB.get(`/${comment.id}/comments?access_token=${token}`)
+              await FB.get(
+                `/${comment.id}/comments?limit=500&access_token=${token}`
+              )
             ).data;
-            return comments.filter(
+            return comments.find(
               (comment) => comment.from && comment.from.id === pageId
             );
           })
         )
-      ).flat();
+      ).filter((comment) => comment);
 
       return toPercent(postCommentReplies.length / postComments.length);
     },
@@ -262,31 +264,29 @@ export default {
     return {
       pageData: {},
       period: "days_28",
+      FB,
     };
   },
   computed: {
     columnNames() {
       return columns.map((column) => column.name);
     },
-    loggedIn() {
-      return FB.loggedIn;
-    },
   },
   watch: {
     period() {
       this.loadData();
     },
-    loggedIn: {
-      immediate: true,
-      handler() {
-        if (this.loggedIn) {
-          this.loadData();
-        }
-      },
-    },
+  },
+  mounted() {
+    if (FB.loggedIn) {
+      this.loadData();
+    }
   },
   methods: {
-    login: FB.login.bind(FB),
+    async login() {
+      await FB.login();
+      await this.loadData();
+    },
     async loadData() {
       let postFields = unique(
         columns

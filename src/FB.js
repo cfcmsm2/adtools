@@ -1,3 +1,17 @@
+function refreshLoginStatus() {
+  return new Promise((resolve) => {
+    window.FB.getLoginStatus((response) => {
+      if (response.status === "connected") {
+        FB.loggedIn = true;
+        resolve(true);
+      } else {
+        FB.loggedIn = false;
+        resolve(false);
+      }
+    });
+  });
+}
+
 export const FB = {
   loggedIn: false,
 
@@ -14,28 +28,14 @@ export const FB = {
           version: "v11.0"
         });
 
-        this.refreshLoginStatus().then(resolve);
+        refreshLoginStatus().then(resolve);
       };
-    });
-  },
-
-  refreshLoginStatus() {
-    return new Promise((resolve) => {
-      window.FB.getLoginStatus((response) => {
-        if (response.status === "connected") {
-          this.loggedIn = true;
-          resolve(true);
-        } else {
-          this.loggedIn = false;
-          resolve(false);
-        }
-      });
     });
   },
 
   async login() {
     await new Promise(window.FB.login);
-    return this.refreshLoginStatus();
+    return refreshLoginStatus();
   },
 
   get(url) {
