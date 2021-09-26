@@ -39,6 +39,19 @@ export const FB = {
   },
 
   get(url) {
-    return new Promise((resolve) => window.FB.api(url, resolve));
+    return new Promise((resolve, reject) => {
+      return window.FB.api(url, (response) => {
+        if (!response || response.error) {
+          if (response && response.error.type === "OAuthException") {
+            refreshLoginStatus();
+          }
+
+          console.error(response);
+          return reject(response && response.error);
+        }
+
+        return resolve(response);
+      });
+    });
   }
 };
