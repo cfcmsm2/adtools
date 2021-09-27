@@ -25,7 +25,7 @@ export const FB = {
         window.FB.init({
           appId: "2870459646568696",
           xfbml: true,
-          version: "v11.0"
+          version: "v12.0"
         });
 
         refreshLoginStatus().then(resolve);
