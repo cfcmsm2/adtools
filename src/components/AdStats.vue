@@ -1,10 +1,7 @@
 <template>
   <div>
     <h1>Ad Stats</h1>
-    <div v-if="!FB.loggedIn">
-      <button class="pure-button" @click="FB.login()">Log in</button>
-    </div>
-    <div v-else>
+    <FBLogin>
       <button
         class="pure-button pure-button-primary"
         @click="downloadData"
@@ -13,7 +10,7 @@
         {{ !loading ? "Download" : "Loading..." }}
       </button>
       <pre v-if="adInfo">{{ JSON.stringify(adInfo, null, 2) }}</pre>
-    </div>
+    </FBLogin>
   </div>
 </template>
 
@@ -22,6 +19,7 @@ import Papa from "papaparse";
 import fileDownload from "js-file-download";
 
 import { FB } from "../FB";
+import FBLogin from "./FBLogin";
 
 const ID_TO_PAGE = {
   112076063796073: "Fremont",
@@ -204,5 +202,6 @@ export default {
       this.loading = false;
     },
   },
+  components: { FBLogin },
 };
 </script>

@@ -7,6 +7,17 @@
             <a class="pure-menu-link" :href="href" @click="navigate">Vibes</a>
           </li>
         </router-link>
+        <router-link
+          to="/audience"
+          v-slot="{ href, navigate, isActive }"
+          custom
+        >
+          <li :class="['pure-menu-item', isActive && 'pure-menu-selected']">
+            <a class="pure-menu-link" :href="href" @click="navigate"
+              >Audience</a
+            >
+          </li>
+        </router-link>
         <router-link to="/emails" v-slot="{ href, navigate, isActive }" custom>
           <li :class="['pure-menu-item', isActive && 'pure-menu-selected']">
             <a class="pure-menu-link" :href="href" @click="navigate">Emails</a>

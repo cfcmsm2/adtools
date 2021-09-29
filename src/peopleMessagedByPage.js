@@ -1,39 +1,22 @@
-function statusChangeCallback(response) {
-  if (response.status === "connected") {
-    //  peopleMessagedByPage()
-  }
-}
+/**
+ * Area Book Lookalike Audience:
+ *
+ * Get conversations
+ * Map Area Book name to FB person name
+ *
+ */
 
-function checkLoginState() {
-  FB.getLoginStatus(function (response) {
-    statusChangeCallback(response);
-  });
-}
-
-window.fbAsyncInit = function () {
-  FB.init({
-    appId: "2870459646568696",
-    cookie: true,
-    xfbml: true,
-    version: "v11.0"
-  });
-
-  FB.getLoginStatus(statusChangeCallback);
-};
-
-function get(url) {
-  return new Promise((resolve) => FB.api(url, resolve));
-}
+import { FB } from "./FB";
 
 /** PEOPLE MESSAGED BY PAGE */
 function getTokens() {
-  return get("/me/accounts?fields=access_token,name&limit=100").then(
+  return FB.get("/me/accounts?fields=access_token,name&limit=100").then(
     ({ data }) => data
   );
 }
 
 function processPage(url, names) {
-  return get(url).then(({ data, paging }) => {
+  return FB.get(url).then(({ data, paging }) => {
     data.forEach((conversation) =>
       names.push(conversation.participants.data[0].name)
     );
@@ -58,7 +41,7 @@ function getPeopleForPage(accessToken) {
   ).then(() => names);
 }
 
-async function peopleMessagedByPage() {
+export async function peopleMessagedByPage() {
   const tokens = await getTokens();
 
   const result = {};

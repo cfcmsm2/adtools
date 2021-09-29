@@ -1,17 +1,3 @@
-function refreshLoginStatus() {
-  return new Promise((resolve) => {
-    window.FB.getLoginStatus((response) => {
-      if (response.status === "connected") {
-        FB.loggedIn = true;
-        resolve(true);
-      } else {
-        FB.loggedIn = false;
-        resolve(false);
-      }
-    });
-  });
-}
-
 export const FB = {
   loggedIn: false,
 
@@ -28,14 +14,28 @@ export const FB = {
           version: "v12.0"
         });
 
-        refreshLoginStatus().then(resolve);
+        this.refreshLoginStatus().then(resolve);
       };
+    });
+  },
+
+  refreshLoginStatus() {
+    return new Promise((resolve) => {
+      window.FB.getLoginStatus((response) => {
+        if (response.status === "connected") {
+          this.loggedIn = true;
+          resolve(true);
+        } else {
+          this.loggedIn = false;
+          resolve(false);
+        }
+      });
     });
   },
 
   async login() {
     await new Promise(window.FB.login);
-    return refreshLoginStatus();
+    return this.refreshLoginStatus();
   },
 
   get(url) {
@@ -43,7 +43,7 @@ export const FB = {
       return window.FB.api(url, (response) => {
         if (!response || response.error) {
           if (response && response.error.type === "OAuthException") {
-            refreshLoginStatus();
+            this.refreshLoginStatus();
           }
 
           console.error(response);

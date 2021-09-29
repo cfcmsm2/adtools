@@ -1,10 +1,7 @@
 <template>
   <div>
     <h1>Page Local Engagement Data</h1>
-    <div v-if="!FB.loggedIn">
-      <button class="pure-button" @click="login()">Log in</button>
-    </div>
-    <div v-else>
+    <FBLogin v-on:login="loadData()">
       <div class="pure-form pure-form-aligned">
         <fieldset>
           <label for="time">Time Period</label>
@@ -39,13 +36,14 @@
           </tr>
         </tbody>
       </table>
-    </div>
+    </FBLogin>
   </div>
 </template>
 
 <script>
 import Vue from "vue";
 import { FB } from "../FB";
+import FBLogin from "./FBLogin";
 
 const PAGE_IDS = [
   "112076063796073",
@@ -277,24 +275,15 @@ export default {
       this.loadData();
     },
   },
-  mounted() {
-    if (FB.loggedIn) {
-      this.loadData();
-    }
-  },
   methods: {
-    async login() {
-      await FB.login();
-      await this.loadData();
-    },
     async loadData() {
-      let postFields = unique(
+      const postFields = unique(
         columns
           .reduce((fields, column) => fields.concat(column.postFields), [])
           .filter((field) => field)
           .concat("created_time")
       ).join(",");
-      let postMetrics = unique(
+      const postMetrics = unique(
         columns
           .reduce((fields, column) => fields.concat(column.postMetrics), [])
           .filter((field) => field)
@@ -337,5 +326,6 @@ export default {
       );
     },
   },
+  components: { FBLogin },
 };
 </script>

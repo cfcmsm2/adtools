@@ -5,11 +5,13 @@ import "purecss/build/pure-min.css";
 import { FB } from "./FB";
 
 import App from "./App.vue";
+import FBLogin from "./components/FBLogin";
 import Sheets from "./components/Sheets";
 import AdStats from "./components/AdStats";
 import Stats from "./components/Stats";
 import Vibes from "./components/Vibes";
 import Emails from "./components/Emails";
+import Audience from "./components/Audience";
 
 Vue.use(VueRouter);
 Vue.config.productionTip = false;
@@ -27,7 +29,8 @@ FB.init().then(() => {
         { path: "/emails", component: Emails },
         { path: "/stats", component: Stats },
         { path: "/adstats", component: AdStats },
-        { path: "/vibes", component: Vibes }
+        { path: "/vibes", component: Vibes },
+        { path: "/audience", component: Audience }
       ]
     })
   }).$mount(appRoot);
