@@ -38,14 +38,15 @@ export const FB = {
     return this.refreshLoginStatus();
   },
 
-  get(url) {
+  _request() {
     return new Promise((resolve, reject) => {
-      return window.FB.api(url, (response) => {
+      return window.FB.api(...arguments, (response) => {
         if (!response || response.error) {
           if (response && response.error.type === "OAuthException") {
             this.refreshLoginStatus();
           }
 
+          console.error(arguments);
           console.error(response);
           return reject(response && response.error);
         }
@@ -53,5 +54,13 @@ export const FB = {
         return resolve(response);
       });
     });
+  },
+
+  get(url) {
+    return this._request(url, "get");
+  },
+
+  post(url, data) {
+    return this._request(url, "post", data);
   }
 };

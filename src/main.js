@@ -5,7 +5,6 @@ import "purecss/build/pure-min.css";
 import { FB } from "./FB";
 
 import App from "./App.vue";
-import FBLogin from "./components/FBLogin";
 import Sheets from "./components/Sheets";
 import AdStats from "./components/AdStats";
 import Stats from "./components/Stats";
