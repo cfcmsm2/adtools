@@ -1,11 +1,3 @@
-/**
- * Area Book Lookalike Audience:
- *
- * Get conversations
- * Map Area Book name to FB person name
- *
- */
-
 import { FB } from "./FB";
 
 /** PEOPLE MESSAGED BY PAGE */
@@ -45,7 +37,7 @@ async function getPeopleForPage(accessToken) {
 export async function peopleMessagedByPage() {
   const tokens = await getTokens();
 
-  const allMessages = (
+  return (
     await Promise.all(
       tokens.map(async ({ access_token, name, id }) => {
         const people = await getPeopleForPage(access_token);
@@ -58,20 +50,20 @@ export async function peopleMessagedByPage() {
     )
   ).flat();
 
-  const distinct = [];
-  return allMessages.filter((currentMessage) => {
-    // de-duplicate messages
-    if (
-      distinct.find(
-        (message) =>
-          message.id === currentMessage.id &&
-          message.pageId === currentMessage.pageId
-      )
-    ) {
-      return false;
-    }
+  // const distinct = [];
+  // return allMessages.filter((currentMessage) => {
+  //   // de-duplicate messages
+  //   if (
+  //     distinct.find(
+  //       (message) =>
+  //         message.id === currentMessage.id &&
+  //         message.pageId === currentMessage.pageId
+  //     )
+  //   ) {
+  //     return false;
+  //   }
 
-    distinct.push(currentMessage);
-    return true;
-  });
+  //   distinct.push(currentMessage);
+  //   return true;
+  // });
 }

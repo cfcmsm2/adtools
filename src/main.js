@@ -5,7 +5,6 @@ import "purecss/build/pure-min.css";
 import { FB } from "./FB";
 
 import App from "./App.vue";
-import Sheets from "./components/Sheets";
 import AdStats from "./components/AdStats";
 import Stats from "./components/Stats";
 import Vibes from "./components/Vibes";
@@ -24,7 +23,6 @@ FB.init().then(() => {
     render: (h) => h(App),
     router: new VueRouter({
       routes: [
-        { path: "/sheets", component: Sheets },
         { path: "/emails", component: Emails },
         { path: "/stats", component: Stats },
         { path: "/adstats", component: AdStats },

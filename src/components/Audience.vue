@@ -18,6 +18,27 @@
           Match
         </button>
       </form>
+
+      <hr />
+      <h2>PSID finder</h2>
+      <form class="pure-form pure-form-stacked">
+        <input
+          type="text"
+          placeholder="Page ID"
+          class="pure-input-1"
+          v-model="search.pageId"
+        />
+        <input
+          type="text"
+          placeholder="Name"
+          class="pure-input-1"
+          v-model="search.name"
+        />
+        <button class="pure-button" type="button" @click="searchForPeople">
+          Find Matches
+        </button>
+        <pre>{{ search.results }}</pre>
+      </form>
     </FBLogin>
   </div>
 </template>
@@ -78,6 +99,11 @@ export default {
   data() {
     return {
       vibes: "",
+      search: {
+        name: "",
+        pageId: "",
+        results: "",
+      },
     };
   },
   methods: {
@@ -163,6 +189,18 @@ export default {
       );
 
       this.vibes = matches.join("\n");
+    },
+
+    async searchForPeople() {
+      this.search.results = "Loading...";
+      // TODO: save result
+      const messages = await peopleMessagedByPage();
+      const results = messages
+        .filter((message) => message.pageId === this.search.pageId)
+        .filter((message) =>
+          clean(message.name).includes(clean(this.search.name))
+        );
+      this.search.results = JSON.stringify(results, null, 2);
     },
   },
   components: { FBLogin },

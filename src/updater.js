@@ -1,15 +1,15 @@
 import { abAPIGet, personInfo, lessonInfo, getProgress } from "./areaBookApi";
 import * as Papa from "papaparse";
 
-let NAME;
-let ABP_LINK;
-let FIRST_LESSON;
-let PERCENT_PRINCIPLES_TAUGHT;
-let CHURCH;
-let CHURCH_TIMES;
-let ON_DATE;
-let BAPTIZED;
-let DROPPED;
+const NAME = "Name";
+const ABP_LINK = "ABP Link";
+const FIRST_LESSON = "First Lesson";
+const PERCENT_PRINCIPLES_TAUGHT = "% Principles";
+const CHURCH = "Attended Church";
+const CHURCH_TIMES = "Times Attended";
+const ON_DATE = "Put On Date?";
+const BAPTIZED = "Baptized";
+const DROPPED = "Dropped";
 
 const NUM_PRINCIPLES = 44;
 
@@ -148,22 +148,10 @@ async function getInfo(oldPerson) {
  */
 export function getPeopleProgress(allPeople) {
   const papaConfig = {
-    header: false,
+    header: true,
     delimiter: "\t"
   };
   const parsedPeople = Papa.parse(allPeople, papaConfig).data;
-
-  // Update data column indexes based on header row
-  const header = parsedPeople.shift();
-  NAME = header.indexOf("Name");
-  ABP_LINK = header.indexOf("ABP Link");
-  FIRST_LESSON = header.indexOf("First Lesson");
-  PERCENT_PRINCIPLES_TAUGHT = header.indexOf("% Principles");
-  CHURCH = header.indexOf("Attended Church");
-  CHURCH_TIMES = header.indexOf("Times Attended");
-  ON_DATE = header.indexOf("Put On Date?");
-  BAPTIZED = header.indexOf("Baptized");
-  DROPPED = header.indexOf("Dropped");
 
   const errors = [];
   return Promise.all(
