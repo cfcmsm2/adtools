@@ -11,7 +11,10 @@ async function processPage(url, people) {
   const { data, paging } = await FB.get(url);
 
   data.forEach((conversation) =>
-    people.push(conversation.participants.data[0])
+    people.push({
+      ...conversation.participants.data[0],
+      link: "https://www.facebook.com/" + conversation.link
+    })
   );
 
   if (paging && paging.next) {
@@ -26,7 +29,7 @@ async function getPeopleForPage(accessToken) {
 
   await Promise.all(
     folders.map((folder) => {
-      const url = `/me/conversations/?limit=499&fields=participants&folder=${folder}&access_token=${accessToken}`;
+      const url = `/me/conversations/?limit=499&fields=participants,link&folder=${folder}&access_token=${accessToken}`;
       return processPage(url, people);
     })
   );
@@ -34,36 +37,27 @@ async function getPeopleForPage(accessToken) {
   return people;
 }
 
+let cache = null;
 export async function peopleMessagedByPage() {
-  const tokens = await getTokens();
+  if (!cache) {
+    const tokens = await getTokens();
 
-  return (
-    await Promise.all(
-      tokens.map(async ({ access_token, name, id }) => {
-        const people = await getPeopleForPage(access_token);
-        people.forEach((person) => {
-          person.page = name;
-          person.pageId = id;
-        });
-        return people;
-      })
-    )
-  ).flat();
+    cache = (
+      await Promise.all(
+        tokens.map(async ({ access_token, name, id }) => {
+          const people = await getPeopleForPage(access_token);
+          return people.map((person) => ({
+            name: person.name,
+            psid: person.id,
+            link: person.link,
+            page: name,
+            pageId: id
+          }));
+        })
+      )
+    ).flat();
+  }
+  console.log(cache);
 
-  // const distinct = [];
-  // return allMessages.filter((currentMessage) => {
-  //   // de-duplicate messages
-  //   if (
-  //     distinct.find(
-  //       (message) =>
-  //         message.id === currentMessage.id &&
-  //         message.pageId === currentMessage.pageId
-  //     )
-  //   ) {
-  //     return false;
-  //   }
-
-  //   distinct.push(currentMessage);
-  //   return true;
-  // });
+  return cache;
 }

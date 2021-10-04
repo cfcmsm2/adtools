@@ -21,7 +21,10 @@
 
       <hr />
       <h2>PSID finder</h2>
-      <form class="pure-form pure-form-stacked">
+      <form
+        class="pure-form pure-form-stacked"
+        @submit.prevent="searchForPeople"
+      >
         <input
           type="text"
           placeholder="Page ID"
@@ -34,9 +37,7 @@
           class="pure-input-1"
           v-model="search.name"
         />
-        <button class="pure-button" type="button" @click="searchForPeople">
-          Find Matches
-        </button>
+        <button class="pure-button">Find Matches</button>
         <pre>{{ search.results }}</pre>
       </form>
     </FBLogin>
@@ -196,7 +197,9 @@ export default {
       // TODO: save result
       const messages = await peopleMessagedByPage();
       const results = messages
-        .filter((message) => message.pageId === this.search.pageId)
+        .filter((message) =>
+          this.search.pageId ? message.pageId === this.search.pageId : true
+        )
         .filter((message) =>
           clean(message.name).includes(clean(this.search.name))
         );
