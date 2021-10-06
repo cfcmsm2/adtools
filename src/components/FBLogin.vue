@@ -18,7 +18,6 @@ export default {
     };
   },
   async mounted() {
-    await FB.refreshLoginStatus();
     if (FB.loggedIn) {
       this.$emit("login");
     }

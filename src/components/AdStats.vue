@@ -20,37 +20,7 @@ import fileDownload from "js-file-download";
 
 import { FB } from "../FB";
 import FBLogin from "./FBLogin";
-
-const ID_TO_PAGE = {
-  112076063796073: "Fremont",
-  102540111429955: "Casper",
-  107872380889014: "Casper",
-  100190701670078: "Laramie",
-  100458364981973: "Laramie",
-  113200947185275: "Missionwide Spanish",
-  101166864903191: "Cheyenne",
-  101514254866318: "Missionwide Spanish",
-  113019807035447: "Cheyenne",
-  109027220775473: "Cheyenne",
-  104996111183539: "Nebraska",
-  102792574600844: "Fort Collins",
-  101018424899828: "Missionwide Spanish",
-  100609861621544: "Windsor",
-  104575054554957: "Greeley",
-  109859227352531: "Missionwide Spanish",
-  105874321094615: "Windsor",
-  107846814223337: "Greeley",
-  102503358098611: "Greeley",
-  100789378273176: "Missionwide Spanish",
-  111660853836193: "Loveland",
-  113096237026249: "Missionwide Spanish",
-  112969893700175: "Longmont",
-  100310588322372: "Missionwide Spanish",
-  103031824713313: "RIP",
-  100179225000921: "RIP",
-  100376911653405: "RIP",
-  102461418107610: "RIP",
-};
+import { ID_TO_PAGE, AD_ACCOUNTS } from "../config.json";
 
 const genPermalink = (ad) =>
   `https://business.facebook.com/${ad.creative.effective_object_story_id}?dco_ad_id=${ad.id}`;
@@ -129,7 +99,7 @@ function adCategory(adName) {
   if (adName.includes("Famil")) return "Families";
   if (adName.includes("BoM")) return "Book of Mormon";
   if (adName.includes("Event")) return "Event";
-  return "Other"; // Or adName??
+  return "Other";
 }
 
 const isSpanish = (targeting) =>
@@ -149,12 +119,6 @@ export default {
   methods: {
     async downloadData() {
       this.loading = true;
-
-      const AD_ACCOUNTS = [
-        "act_439329213748764", // Current
-        "act_1313624522157797", // Old
-        "act_596528517690671", // WY
-      ];
 
       this.adInfo = [];
       for (const accountId of AD_ACCOUNTS) {

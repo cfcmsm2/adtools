@@ -49,6 +49,7 @@ import * as Papa from "papaparse";
 import { FB } from "../FB";
 import { peopleMessagedByPage } from "../peopleMessagedByPage";
 import FBLogin from "./FBLogin";
+import { AUDIENCE_ID } from "../config";
 import { distance } from "fastest-levenshtein";
 
 const clean = (str) =>
@@ -93,8 +94,6 @@ async function getPage(adId) {
   const adInfo = await FB.get(`/${adId}?fields=creative.fields(actor_id)`);
   return adInfo.creative.actor_id;
 }
-
-const AUDIENCE_ID = "23848716408360294";
 
 export default {
   data() {
@@ -194,7 +193,6 @@ export default {
 
     async searchForPeople() {
       this.search.results = "Loading...";
-      // TODO: save result
       const messages = await peopleMessagedByPage();
       const results = messages
         .filter((message) =>

@@ -44,20 +44,9 @@
 import Vue from "vue";
 import { FB } from "../FB";
 import FBLogin from "./FBLogin";
+import { PAGE_IDS } from "../config.json"
 
-const PAGE_IDS = [
-  "112076063796073",
-  "102540111429955",
-  "100190701670078",
-  "101166864903191",
-  "104996111183539",
-  "102792574600844",
-  "104575054554957",
-  "109859227352531",
-  "105874321094615",
-  "111660853836193",
-  "112969893700175",
-];
+
 
 async function getInsights(
   token,
