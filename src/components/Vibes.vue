@@ -15,6 +15,13 @@
       >
         Update
       </button>
+      <a
+        class="pure-button green-button"
+        href="https://docs.google.com/spreadsheets/d/1JHXD2H3NJTg9pj5k6nWFSApdVj3-oZ-0VaEh6o9LNxI/edit#gid=2089927917"
+        target="_blank"
+      >
+        Ad Info
+      </a>
     </form>
     <pre v-if="errors && errors.length">
     {{ JSON.stringify(errors, null, 2) }}
@@ -49,3 +56,11 @@ export default {
   },
 };
 </script>
+
+<style scoped>
+.green-button {
+  background-color: #00D800;
+  color: white;
+  margin-left: 10px;
+}
+</style>

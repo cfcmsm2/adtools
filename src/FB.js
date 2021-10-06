@@ -34,10 +34,10 @@ export const FB = {
   },
 
   async login() {
-    // await this.refreshLoginStatus();
-    // if (!this.loggedIn) {
-    await new Promise(window.FB.login);
-    // }
+    await this.refreshLoginStatus();
+    if (!this.loggedIn) {
+      await new Promise(window.FB.login);
+    }
     return this.refreshLoginStatus();
   },
 
