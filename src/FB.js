@@ -11,34 +11,32 @@ export const FB = {
         window.FB.init({
           appId: "2870459646568696",
           xfbml: true,
-          version: "v12.0"
+          version: "v12.0",
+          status: true
         });
 
-        this.refreshLoginStatus().then(resolve);
+        window.FB.Event.subscribe(
+          "auth.statusChange",
+          this.statusChangeCallback.bind(this)
+        );
+        resolve();
       };
     });
   },
 
-  refreshLoginStatus() {
-    return new Promise((resolve) => {
-      window.FB.getLoginStatus((response) => {
-        if (response.status === "connected") {
-          this.loggedIn = true;
-          resolve(true);
-        } else {
-          this.loggedIn = false;
-          resolve(false);
-        }
-      });
-    });
+  statusChangeCallback(response) {
+    if (response.status === "connected") {
+      this.loggedIn = true;
+    } else {
+      this.loggedIn = false;
+    }
   },
 
   async login() {
-    await this.refreshLoginStatus();
+    await new Promise(window.FB.getLoginStatus);
     if (!this.loggedIn) {
       await new Promise(window.FB.login);
     }
-    return this.refreshLoginStatus();
   },
 
   _request() {
@@ -46,7 +44,7 @@ export const FB = {
       return window.FB.api(...arguments, (response) => {
         if (!response || response.error) {
           if (response && response.error.type === "OAuthException") {
-            this.refreshLoginStatus();
+            window.FB.getLoginStatus();
           }
 
           console.error(arguments);
