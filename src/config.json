@@ -50,5 +50,17 @@
     "act_596528517690671"
   ],
   "_comment3": "Audience ID for the PWI lookalike audience",
-  "AUDIENCE_ID": "23848716408360294"
+  "AUDIENCE_ID": "23848716408360294",
+  "FB_APP_ID": "2870459646568696",
+  "COLUMN_NAMES": {
+    "NAME": "Name",
+    "ABP_LINK": "ABP Link",
+    "FIRST_LESSON": "First Lesson",
+    "PERCENT_PRINCIPLES_TAUGHT": "% Principles",
+    "CHURCH": "Attended Church",
+    "CHURCH_TIMES": "Times Attended",
+    "ON_DATE": "Put On Date?",
+    "BAPTIZED": "Baptized",
+    "DROPPED": "Dropped"
+  }
 }

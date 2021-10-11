@@ -12,7 +12,6 @@ import Emails from "./components/Emails";
 import Audience from "./components/Audience";
 
 Vue.use(VueRouter);
-Vue.config.productionTip = false;
 
 document.title = "Facebook Tools";
 const appRoot = document.createElement("div");

@@ -13,7 +13,7 @@ async function processPage(url, people) {
   data.forEach((conversation) =>
     people.push({
       ...conversation.participants.data[0],
-      link: "https://www.facebook.com/" + conversation.link
+      link: "https://www.facebook.com" + conversation.link
     })
   );
 

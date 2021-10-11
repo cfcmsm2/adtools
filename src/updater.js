@@ -1,15 +1,6 @@
 import { abAPIGet, personInfo, lessonInfo, getProgress } from "./areaBookApi";
+import { COLUMN_NAMES } from "./config";
 import * as Papa from "papaparse";
-
-const NAME = "Name";
-const ABP_LINK = "ABP Link";
-const FIRST_LESSON = "First Lesson";
-const PERCENT_PRINCIPLES_TAUGHT = "% Principles";
-const CHURCH = "Attended Church";
-const CHURCH_TIMES = "Times Attended";
-const ON_DATE = "Put On Date?";
-const BAPTIZED = "Baptized";
-const DROPPED = "Dropped";
 
 const NUM_PRINCIPLES = 44;
 
@@ -82,23 +73,27 @@ function formatDate(date) {
 }
 
 async function getInfo(oldPerson) {
-  let personId = oldPerson[ABP_LINK].split("/")[4].trim();
+  let personId = oldPerson[COLUMN_NAMES.ABP_LINK].split("/")[4].trim();
   let dropped = false;
 
   const { person } = await personInfo(personId);
 
-  oldPerson[NAME] = `${person.firstName || ""} ${person.lastName || ""}`;
+  oldPerson[COLUMN_NAMES.NAME] = `${person.firstName || ""} ${
+    person.lastName || ""
+  }`;
 
   if (person.principleSummary) {
     // if they've been taught principles
-    oldPerson[PERCENT_PRINCIPLES_TAUGHT] = Math.floor(
+    oldPerson[COLUMN_NAMES.PERCENT_PRINCIPLES_TAUGHT] = Math.floor(
       (person.principleSummary.length / NUM_PRINCIPLES) * 100
     );
   } else {
-    oldPerson[PERCENT_PRINCIPLES_TAUGHT] = 0;
+    oldPerson[COLUMN_NAMES.PERCENT_PRINCIPLES_TAUGHT] = 0;
   }
-  oldPerson[ON_DATE] = person.scheduledBaptism ? "On Date" : oldPerson[ON_DATE];
-  oldPerson[BAPTIZED] = person.baptismDate
+  oldPerson[COLUMN_NAMES.ON_DATE] = person.scheduledBaptism
+    ? "On Date"
+    : oldPerson[COLUMN_NAMES.ON_DATE];
+  oldPerson[COLUMN_NAMES.BAPTIZED] = person.baptismDate
     ? formatDate(person.baptismDate)
     : "";
   dropped = person.status > 10 || ""; // https://areabook.churchofjesuschrist.org/services/config?lang=eng
@@ -109,28 +104,30 @@ async function getInfo(oldPerson) {
     (item) => item.timelineItemType === "SACRAMENT"
   );
   if (sacInfo.length) {
-    oldPerson[CHURCH] = formatDate(sacInfo[sacInfo.length - 1].itemDate);
+    oldPerson[COLUMN_NAMES.CHURCH] = formatDate(
+      sacInfo[sacInfo.length - 1].itemDate
+    );
   } else {
-    oldPerson[CHURCH] = "";
+    oldPerson[COLUMN_NAMES.CHURCH] = "";
   }
 
   if (dropped) {
-    oldPerson[DROPPED] = formatDate(
+    oldPerson[COLUMN_NAMES.DROPPED] = formatDate(
       progress.find((item) => item.timelineItemType === "STOPPED_TEACHING")
         .itemDate
     );
   }
 
-  oldPerson[CHURCH_TIMES] = sacInfo.length;
+  oldPerson[COLUMN_NAMES.CHURCH_TIMES] = sacInfo.length;
 
   let npDate;
-  if (!oldPerson[FIRST_LESSON]) {
+  if (!oldPerson[COLUMN_NAMES.FIRST_LESSON]) {
     npDate = await isNewPerson(progress, personId);
   } else {
-    npDate = oldPerson[FIRST_LESSON];
+    npDate = oldPerson[COLUMN_NAMES.FIRST_LESSON];
   }
 
-  oldPerson[FIRST_LESSON] = npDate;
+  oldPerson[COLUMN_NAMES.FIRST_LESSON] = npDate;
 
   return oldPerson;
 }
@@ -157,7 +154,10 @@ export function getPeopleProgress(allPeople) {
   return Promise.all(
     parsedPeople.map((person) =>
       getInfo(person).catch((err) => {
-        errors.push({ link: person[ABP_LINK], error: err.toString() });
+        errors.push({
+          link: person[COLUMN_NAMES.ABP_LINK],
+          error: err.toString()
+        });
         return person;
       })
     )

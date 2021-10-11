@@ -124,7 +124,7 @@ export default {
       for (const accountId of AD_ACCOUNTS) {
         const { data } = await FB.get(
           `/${accountId}/ads?fields=name,` +
-            "creative.fields(id,title,effective_object_story_id,actor_id)," +
+            "creative.fields(id,title,effective_object_story_id,image_hash,asset_feed_spec,video_id,actor_id)," +
             "campaign.fields(objective)," +
             "adset.fields(targeting)," +
             "insights.fields(ad_id,reach,impressions,actions,spend,objective).date_preset(maximum)" +
@@ -142,7 +142,13 @@ export default {
             "Audience Type": audienceType(ad.adset.targeting),
             "Ad Name": ad.name,
             "Ad Category": adCategory(ad.name),
-            "Creative ID": ad.creative.id,
+            "Creative ID":
+              ad.creative.image_hash ||
+              (ad.creative.asset_feed_spec &&
+                ad.creative.asset_feed_spec.images &&
+                ad.creative.asset_feed_spec.images[0].hash) ||
+              ad.creative.video_id ||
+              ad.creative.id,
             "Spanish?": isSpanish(ad.adset.targeting).toString().toUpperCase(),
             Reach: Number(ad.insights.data[0].reach),
             Frequency: (

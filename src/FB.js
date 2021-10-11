@@ -1,3 +1,5 @@
+import { FB_APP_ID } from "./config.json";
+
 export const FB = {
   loggedIn: false,
 
@@ -8,17 +10,18 @@ export const FB = {
       document.body.prepend(FBScript);
 
       window.fbAsyncInit = () => {
+        window.FB.Event.subscribe(
+          "auth.statusChange",
+          this.statusChangeCallback.bind(this)
+        );
+
         window.FB.init({
-          appId: "2870459646568696",
+          appId: FB_APP_ID,
           xfbml: true,
           version: "v12.0",
           status: true
         });
 
-        window.FB.Event.subscribe(
-          "auth.statusChange",
-          this.statusChangeCallback.bind(this)
-        );
         resolve();
       };
     });
