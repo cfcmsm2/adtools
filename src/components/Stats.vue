@@ -44,9 +44,7 @@
 import Vue from "vue";
 import { FB } from "../FB";
 import FBLogin from "./FBLogin";
-import { PAGE_IDS } from "../config.json"
-
-
+import { PAGE_IDS } from "../config.json";
 
 async function getInsights(
   token,
@@ -152,7 +150,11 @@ const columns = [
 
       // There's no metric specifically for organic reach by city.
       // But our ads are only run locally! Since there's no paid
-      // non-local reach, Local Organic Reach = Organic Reach - Non-Local Reach
+      // non-local reach,
+      //
+      // Organic Reach = Local Organic Reach + Non-Local Organic Reach
+      // Non-Local Oraganic Reach
+      // Local Organic Reach = Organic Reach - Non-Local Reach
       return organicReach - nonLocalReach;
     },
   },
@@ -181,6 +183,15 @@ const columns = [
       if (!viewTime.length) return "No videos";
 
       return Math.round(sum(viewTime) / viewTime.length) / 1000;
+    },
+  },
+  {
+    name: "Currently Scheduled Posts",
+    async getData({ token }) {
+      const scheduled = (
+        await FB.get(`/me/scheduled_posts?access_token=${token}`)
+      ).data;
+      return scheduled.length;
     },
   },
   {
@@ -285,7 +296,7 @@ export default {
       await Promise.all(
         data.map(async ({ access_token, name, id }) => {
           if (!PAGE_IDS.includes(id)) {
-            return Promise.resolve();
+            return;
           }
 
           const posts = (
@@ -295,6 +306,7 @@ export default {
           ).data.filter(
             (post) => new Date(post.created_time) > daysAgo(this.period)
           );
+          console.log(posts);
 
           Vue.set(this.pageData, name, {});
           return Promise.all(
