@@ -36,7 +36,7 @@ export const FB = {
   },
 
   async login() {
-    await new Promise(window.FB.getLoginStatus);
+    await new Promise((resolve) => window.FB.getLoginStatus(resolve, true));
     if (!this.loggedIn) {
       await new Promise(window.FB.login);
     }

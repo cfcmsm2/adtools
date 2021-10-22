@@ -1,5 +1,7 @@
 <template>
   <div>
+    <!-- <pre>LOCAL {{ FB }}</pre>
+    <pre>WINDOW {{ test }}</pre> -->
     <button v-if="!FB.loggedIn" class="pure-button" @click="login()">
       Log in
     </button>
@@ -15,6 +17,7 @@ export default {
   data() {
     return {
       FB,
+      // test: window.FB,
     };
   },
   async mounted() {
