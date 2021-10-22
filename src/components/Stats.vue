@@ -116,6 +116,9 @@ function toPercent(number) {
   return Math.round(number * 10000) / 100 + "%";
 }
 
+const formatter = new Intl.NumberFormat("en");
+const formatInt = (num) => formatter.format(Math.round(num));
+
 const columns = [
   {
     name: "Lifetime Local Page Likes",
@@ -130,7 +133,7 @@ const columns = [
 
       const totalLikes = await getInsights(token, "page_fans", "");
 
-      return Math.round(totalLikes * percentLocal);
+      return formatInt(totalLikes * percentLocal);
     },
   },
   {
@@ -155,7 +158,7 @@ const columns = [
       // Organic Reach = Local Organic Reach + Non-Local Organic Reach
       // Non-Local Oraganic Reach
       // Local Organic Reach = Organic Reach - Non-Local Reach
-      return organicReach - nonLocalReach;
+      return formatInt(organicReach - nonLocalReach);
     },
   },
   // {
