@@ -147,7 +147,7 @@ const columns = [
       const nonLocalReach = accumulateNonLocal(byCityReach);
       const organicReach = await getInsights(
         token,
-        "page_impressions_organic_unique",
+        "page_posts_impressions_organic_unique",
         timePeriod
       );
 
@@ -186,6 +186,20 @@ const columns = [
       if (!viewTime.length) return "No videos";
 
       return Math.round(sum(viewTime) / viewTime.length) / 1000;
+    },
+  },
+  {
+    name: "Posts",
+    async getData({ posts }) {
+      return posts.length;
+    },
+  },
+  {
+    name: "Videos",
+    postFields: ["status_type"],
+    async getData({ posts }) {
+      const videos = posts.filter((post) => post.status_type === "added_video");
+      return videos.length;
     },
   },
   {
