@@ -1,31 +1,54 @@
 <template>
-  <form action="" class="pure-form pure-form-stacked">
-    <select v-model="selectedZone">
-      <option value="">Select a zone...</option>
-      <option v-for="zone in zones" :key="zone">{{ zone }}</option>
-    </select>
+  <div>
+    <a
+      href="https://areabook.churchofjesuschrist.org/services/mission/24723"
+      target="_blank"
+      >Full Data</a
+    >
+    <form action="" class="pure-form pure-form-stacked">
+      <select v-model="selectedZone">
+        <option value="">Select a zone...</option>
+        <option v-for="zone in zones" :key="zone">{{ zone }}</option>
+      </select>
 
-    <label v-for="area in zoneAreas" :for="area.name" :key="area.id">
-      <input type="checkbox" :id="area.id" v-model="showArea[area.id]" />
-      {{ area.name }}
-    </label>
+      <label v-for="area in zoneAreas" :key="area.id">
+        <input type="checkbox" v-model="showArea[area.id]" />
+        {{ area.name }}
+      </label>
+    </form>
 
     <h2>Area Emails</h2>
     <ul>
-      <li v-for="email in emails" :key="email">
-        {{ email }}
+      <li v-for="area in selectedAreas" :key="area.id">
+        {{ area.email }}
       </li>
     </ul>
 
+    <hr />
+
     <h2>Names</h2>
-    <div>
-      {{ names.join(",") }}
-    </div>
-  </form>
+    <div><strong>For </strong>{{ missionaryNames.join(",") }}</div>
+
+    <ul>
+      <li v-for="fullName in fullNames" :key="fullName">
+        {{ fullName }}
+      </li>
+    </ul>
+
+    <hr />
+
+    <h2>Area Phone Numbers</h2>
+    <ul>
+      <li v-for="area in selectedAreas" :key="area.id">
+        {{ area.areaNumbers && area.areaNumbers.join(", ") }}
+      </li>
+    </ul>
+  </div>
 </template>
 
 <script>
 import Vue from "vue";
+import { MISSION_ID } from "../config";
 import { abAPIGet } from "../areaBookApi";
 
 export default {
@@ -65,12 +88,18 @@ export default {
         this.zoneAreas.find((area) => area.id.toString() === areaId)
       );
     },
-    emails() {
-      return this.selectedAreas.map((area) => area.email);
-    },
-    names() {
+    missionaryNames() {
       return this.selectedAreas
         .map((area) => area.missionaries.map(this.missionaryToName))
+        .flat();
+    },
+    fullNames() {
+      return this.selectedAreas
+        .map((area) =>
+          area.missionaries.map(
+            (missionary) => missionary.firstName + " " + missionary.lastName
+          )
+        )
         .flat();
     },
   },
@@ -85,7 +114,7 @@ export default {
     },
   },
   async created() {
-    this.mission = (await abAPIGet("/mission/24723")).mission;
+    this.mission = (await abAPIGet(`/mission/${MISSION_ID}`)).mission;
   },
 };
 </script>

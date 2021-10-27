@@ -213,7 +213,7 @@ const columns = [
   },
   {
     name: "Comments Responded To",
-    postFields: ["comments.limit(500)"],
+    postFields: ["comments.limit(500).filter(toplevel)"],
     async getData({ token, posts, pageId }) {
       if (!posts.length) return "No posts";
 
@@ -239,6 +239,21 @@ const columns = [
       ).filter((comment) => comment);
 
       return toPercent(postCommentReplies.length / postComments.length);
+    },
+  },
+  {
+    name: "Total Comments",
+    postFields: ["id"],
+    async getData({ posts }) {
+      if (!posts.length) return "No posts";
+
+      const commentInfo = await Promise.all(
+        posts.map((post) =>
+          FB.get(`/${post.id}/comments?summary=total_count&filter=stream`)
+        )
+      );
+
+      return sum(commentInfo.map(({ summary }) => summary.total_count));
     },
   },
   {

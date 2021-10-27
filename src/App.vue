@@ -39,6 +39,11 @@
     </div>
 
     <router-view></router-view>
+    <footer style="margin-top: 40%; /* ugly sorry */">
+      <a href="https://codesandbox.io/s/cfcm-tools-y9kfe" target="blank"
+        >Edit Code</a
+      >
+    </footer>
   </main>
 </template>
 

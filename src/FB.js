@@ -18,6 +18,7 @@ export const FB = {
         window.FB.init({
           appId: FB_APP_ID,
           xfbml: true,
+          cookie: false,
           version: "v12.0",
           status: true
         });
@@ -28,6 +29,7 @@ export const FB = {
   },
 
   statusChangeCallback(response) {
+    console.log(response);
     if (response.status === "connected") {
       this.loggedIn = true;
     } else {
@@ -36,9 +38,13 @@ export const FB = {
   },
 
   async login() {
-    await new Promise((resolve) => window.FB.getLoginStatus(resolve, true));
+    //   await new Promise((resolve) => window.FB.getLoginStatus(resolve, true));
     if (!this.loggedIn) {
       await new Promise(window.FB.login);
+
+      if (!this.loggedIn) {
+        throw new Error("Login failed");
+      }
     }
   },
 
