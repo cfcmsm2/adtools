@@ -47,6 +47,10 @@ function audienceType(targeting) {
   return "BROAD";
 }
 
+function wait(seconds) {
+  return new Promise((resolve) => setTimeout(seconds * 1000, resolve));
+}
+
 function dateToday() {
   const today = new Date();
   return `${today.getFullYear()}-${today.getMonth() + 1}-${today.getDate()}`;
@@ -164,6 +168,8 @@ export default {
         });
 
         this.adInfo.push(...accountAds);
+
+        wait(10); // FB rate limits us when we get too much data too quickly
       }
 
       const csvAdInfo = Papa.unparse(this.adInfo, { header: true });

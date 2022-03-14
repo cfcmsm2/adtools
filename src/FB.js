@@ -40,7 +40,12 @@ export const FB = {
   async login() {
     //   await new Promise((resolve) => window.FB.getLoginStatus(resolve, true));
     if (!this.loggedIn) {
-      await new Promise(window.FB.login);
+      await new Promise((resolve) =>
+        window.FB.login(resolve, {
+          scope:
+            "public_profile,email,ads_management,ads_read,pages_manage_posts,pages_messaging,pages_read_engagement,pages_show_list,read_insights,pages_read_user_content,pages_manage_metadata"
+        })
+      );
 
       if (!this.loggedIn) {
         throw new Error("Login failed");
